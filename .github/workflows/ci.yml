@@ -1,0 +1,30 @@
+name: Checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python: ['3.9', '3.13']
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Test RFC vectors and secret handling
+        run: python3 -m unittest discover -s tests -v
+      - name: Scan committed content
+        run: python3 scripts/check-publication.py
+      - name: Check installer syntax
+        run: bash -n scripts/install-app.sh
+      - name: Build and verify local app
+        run: ./scripts/install-app.sh --name 'auth-otp CI' --destination "$RUNNER_TEMP/auth-otp-build"
